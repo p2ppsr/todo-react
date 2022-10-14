@@ -4,7 +4,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import {
   AppBar, Toolbar, List, ListItem, ListItemText, ListItemIcon, Checkbox, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions, TextField,
-  Button, Fab, LinearProgress
+  Button, Fab, LinearProgress, Typography
 } from '@mui/material'
 import { makeStyles } from '@mui/styles'
 import AddIcon from '@mui/icons-material/Add'
@@ -44,7 +44,7 @@ const App = () => {
   const [tasksLoading, setTasksLoading] = useState(true)
   const [tasks, setTasks] = useState([])
   const [completeOpen, setCompleteOpen] = useState(false)
-  const [selectedTask, setSelectedTask] = useState(null)
+  const [selectedTask, setSelectedTask] = useState({})
   const [completeLoading, setCompleteLoading] = useState(false)
   const classes = useStyles()
 
@@ -79,11 +79,11 @@ const App = () => {
         const decryptedTasks = await Promise
           .all(tasksFromBridge.map(async task => {
             try {
-              debugger
               const decryptedTask = await decrypt({
-                ciphertext: task.task,
+                ciphertext: Buffer.from(task.task, 'base64'),
                 protocolID: 'todo list',
-                keyID: '1'
+                keyID: '1',
+                returnType: 'string'
               })
               return {
                 ...task,
@@ -134,8 +134,8 @@ const App = () => {
       // Create an action script based on the TODO protocol
       const actionScript = await pushdrop.create({
         fields: [
-          Buffer.from(TODO_PROTO_ADDR, 'utf8'),
-          Buffer.from(encryptedTask, 'base64')
+          Buffer.from(TODO_PROTO_ADDR),
+          Buffer.from(encryptedTask)
         ],
         protocolID: 'todo list',
         keyID: '1'
@@ -169,12 +169,32 @@ const App = () => {
     }
   }
 
+  // Opens the completion dialog for the selected task
+  const openCompleteModal = task => () => {
+    setSelectedTask(task)
+    setCompleteOpen(true)
+  }
+
+  // Redeems the ToDo toeken, marking the selected task as completed
+  const handleCompleteSubmit = async e => {
+    e.preventDefault()
+    try {
+      setCompleteLoading(true)
+      const unlockingScript = await pushdrop.redeem()
+    } catch (e) {
+      toast.error(`Error completing task: ${e.message}`)
+      console.error(e)
+    } finally {
+      setCompleteLoading(false)
+    }
+  }
+
   return (
     <>
       <ToastContainer />
       <AppBar>
         <Toolbar>
-          TODO
+          <Typography>TODO</Typography>
         </Toolbar>
       </AppBar>
       <div className={classes.app_bar_placeholder} />
@@ -183,17 +203,25 @@ const App = () => {
           <AddIcon />
         </Fab>
       </div>
-      <List>
-        {tasks.map((x, i) => (
-          <ListItem key={i} button>
-            <ListItemIcon><Checkbox checked={false} /></ListItemIcon>
-            <ListItemText
-              primary={x.task}
-              secondary={x.amount}
-            />
-          </ListItem>
-        ))}
-      </List>
+      {tasksLoading
+        ? <LinearProgress className={classes.loading_bar} />
+        : (
+          <List>
+            {tasks.map((x, i) => (
+              <ListItem
+                key={i}
+                button
+                onClick={openCompleteModal(x)}
+              >
+                <ListItemIcon><Checkbox checked={false} /></ListItemIcon>
+                <ListItemText
+                  primary={x.task}
+                  secondary={`${x.sats} satoshis`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        )}
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)}>
         <form onSubmit={handleCreateSubmit}>
           <DialogTitle>
@@ -225,6 +253,26 @@ const App = () => {
             <DialogActions>
               <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
               <Button type='submit'>OK</Button>
+            </DialogActions>
+          )}
+        </form>
+      </Dialog>
+      <Dialog open={completeOpen} onClose={() => setCompleteOpen(false)}>
+        <form onSubmit={handleCompleteSubmit}>
+          <DialogTitle>
+            Complete "{selectedTask.task}"?
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText paragraph>
+              By marking this task as complete, you'll receive back your {selectedTask.sats} satoshis.
+            </DialogContentText>
+          </DialogContent>
+          {completeLoading
+            ? <LinearProgress className={classes.loading_bar} />
+            : (
+            <DialogActions>
+              <Button onClick={() => setCompleteOpen(false)}>Cancel</Button>
+              <Button type='submit'>Complete Task</Button>
             </DialogActions>
           )}
         </form>
