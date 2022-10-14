@@ -11,7 +11,9 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import parapet from 'parapet-js'
 import pushdrop from 'pushdrop'
-import { getPublicKey, decrypt, encrypt, createAction } from '@babbage/sdk'
+import SDK, { getPublicKey, decrypt, encrypt, createAction } from '@babbage/sdk'
+
+window.sdk = SDK
 
 // Determine which Bridgeport environment this app is running in
 const bridgeportResolvers = window.location.host.startsWith('localhost')
@@ -140,6 +142,7 @@ const App = () => {
         protocolID: 'todo list',
         keyID: '1'
       })
+
       // Create a new ToDo Token and add it to the list
       const newToDoToken = await createAction({
         outputs: [{
@@ -153,7 +156,7 @@ const App = () => {
       setTasks(originalTasks => ([
         {
           task: createTask,
-          amount: `${Number(createAmount)} satoshis`,
+          sats: Number(createAmount),
           token: newToDoToken
         },
         ...originalTasks
