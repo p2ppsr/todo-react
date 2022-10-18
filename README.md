@@ -6,7 +6,7 @@ A Stageline ("testnet") deployment of the master branch of this repository is at
 
 ## Overview
 
-This TODO list applicaion goes beyond the classic demo traditionally used to teach people the basics of UI libraries. It showcases MetaNet technologies like tokenization, identity, encryption and state management. To learn more, check out the accompanying tutorial series.
+This TODO list application goes beyond the classic demo traditionally used to teach people the basics of UI libraries. It showcases MetaNet technologies like tokenization, identity, encryption and state management. To learn more, check out the accompanying tutorial series.
 
 You also need to understand the [TODO Protocol Bridge](https://github.com/p2ppsr/todo-bridge), which tracks and manages state within this application, allowing the user to reload the page.
 
@@ -32,7 +32,7 @@ Your changes should be reflected on-screen whenever you reload.
 
 ## Tools Used
 
-This ToDo applicaion uses various Bitcoin and web-related tools for different things:
+This ToDo application uses various Bitcoin and web-related tools for different things:
 
 - [**React**](https://reactjs.org) We use React to render the webpage UI for this application, and track the state of the page.
 - [**MUI**](https://mui.com) We use a UI framework within React called MUI to help with page styling, text fields, buttons and dialog boxes.
