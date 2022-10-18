@@ -10,11 +10,12 @@ import 'react-toastify/dist/ReactToastify.css'
 import {
   AppBar, Toolbar, List, ListItem, ListItemText, ListItemIcon, Checkbox, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions, TextField,
-  Button, Fab, LinearProgress, Typography
+  Button, Fab, LinearProgress, Typography, IconButton
 } from '@mui/material'
 import { makeStyles } from '@mui/styles'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
+import GitHubIcon from '@mui/icons-material/GitHub'
 import parapet from 'parapet-js'
 import pushdrop from 'pushdrop'
 import { getPublicKey, decrypt, encrypt, createAction } from '@babbage/sdk'
@@ -45,10 +46,24 @@ const useStyles = makeStyles({
   add_fab: {
     position: 'fixed',
     right: '1em',
-    bottom: '1em'
+    bottom: '1em',
+    zIndex: 10
   },
   loading_bar: {
     margin: '1em'
+  },
+  github_icon: {
+    color: '#ffffff'
+  },
+  app_bar_grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr auto',
+    gridGap: '1em'
+  },
+  no_items: {
+    margin: 'auto',
+    textAlign: 'center',
+    marginTop: '5em'
   }
 }, { name: 'App' })
 
@@ -329,7 +344,18 @@ const App = () => {
       {/* here's the app title bar */}
       <AppBar>
         <Toolbar>
-          <Typography>ToDo List — Get Rewarded!</Typography>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            ToDo List — Get Rewarded!
+          </Typography>
+          <IconButton
+            size='large'
+            color='inherit'
+            onClick={() => {
+              window.open('https://github.com/p2ppsr/todo-react', '_blank')
+            }}
+          >
+            <GitHubIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
       <div className={classes.app_bar_placeholder} />
@@ -346,6 +372,14 @@ const App = () => {
         ? <LinearProgress className={classes.loading_bar} />
         : (
           <List>
+            {tasks.length === 0 && (
+              <div className={classes.no_items}>
+                <Typography variant='h4'>No ToDo Items</Typography>
+                <Typography color='textSecondary'>
+                  Use the<AddIcon color='primary' />button below to start a task
+                </Typography>
+              </div>
+            )}
             {tasks.map((x, i) => (
               <ListItem
                 key={i}
