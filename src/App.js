@@ -116,7 +116,9 @@ const App = () => {
       // tokens later.
       const bitcoinOutputScript = await pushdrop.create({
         fields: [ // The "fields" are the data payload to attach to the token.
-          // For more info on these fields, look at the ToDo protocol document.
+          // For more info on these fields, look at the ToDo protocol document 
+          // (PROTOCOL.md). Note that the PushDrop library handles the public 
+          // key, signature, and OP_DROP fields automatically.
           Buffer.from(TODO_PROTO_ADDR), // TODO protocol namespace address
           Buffer.from(encryptedTask)    // TODO task (encrypted)
         ],
@@ -127,12 +129,13 @@ const App = () => {
       })
 
       // Now that we have the output script for our ToDo Bitcoin token, we can 
-      // add it to a Bitcoin transaction (a.k.a. "Action"), and send it to the 
-      // blockchain. Actions are the things that users do, and they take the 
-      // form of Bitcoin transactions.
+      // add it to a Bitcoin transaction (a.k.a. "Action"), and register the 
+      // new token with the blockchain. On the MetaNet, Actions are anything 
+      // that a user does, and all Actions take the form of Bitcoin 
+      // transactions.
       const newToDoToken = await createAction({
-        // The Bitcoin transaction ("Action" with a capital A) has an output, 
-        // because it has led to the creation of a new Bitcoin token.The token 
+        // This Bitcoin transaction ("Action" with a capital A) has one output, 
+        // because it has led to the creation of a new Bitcoin token. The token 
         // that gets created represents our new ToDo list item.
         outputs: [{
           // The output amount is how much Bitcoin (measured in "satoshis") 
@@ -145,10 +148,11 @@ const App = () => {
           // We can put the new output into a "basket" which will keep track of 
           // it, so that we can get it back later.
           basket: 'todo tokens',
-          // Lastly, we can describe this output for the user
+          // Lastly, we should describe this output for the user.
           description: 'New ToDo list item'
         }],
-        // We'll let the user know what this Action
+        // Describe the Actions that your app facilitates, in the present 
+        // tense, for the user's future reference.
         description: `Create a TODO task: ${createTask}`
       })
 
@@ -189,17 +193,18 @@ const App = () => {
       setCompleteLoading(true)
 
       // Here, we're using the PushDrop library to unlcok / redeem the PushDrop 
-      // token that was previously created.By providing this information, 
-      // PushDrop can "unlock" and spend the token.When the token gets spent, 
+      // token that was previously created. By providing this information, 
+      // PushDrop can "unlock" and spend the token. When the token gets spent, 
       // the user gets their bitcoins back, and the ToDo token is removed from 
       // the list.
       const unlockingScript = await pushdrop.redeem({
-        // To unlock the token, we need to use the same "todo list" protocol 
-        // and key ID as when we created the ToDo token before.Otherwise, the 
+        // To unlock the token, we need to use the same "todo list" protocolID 
+        // and keyID as when we created the ToDo token before. Otherwise, the 
         // key won't fit the lock and the Bitcoins won't come out.
         protocolID: 'todo list',
         keyID: '1',
-        // We're telling PushDrop which previous transaction and output we want to unlock, so that the correct unlocking puzzle can be prepared.
+        // We're telling PushDrop which previous transaction and output we want 
+        // to unlock, so that the correct unlocking puzzle can be prepared.
         prevTxId: selectedTask.token.txid,
         outputIndex: selectedTask.token.outputIndex,
         // We also give PushDrop a copy of the locking puzzle ("script") that 
@@ -210,13 +215,16 @@ const App = () => {
         outputAmount: selectedTask.sats
       })
 
-      // Now, we're going to use the unlocking puzle that PushDrop has prepared for us, so that the user can get their Bitcoins back. This is another "Action", which is just a Bitcoin transaction.
+      // Now, we're going to use the unlocking puzle that PushDrop has prepared 
+      // for us, so that the user can get their Bitcoins back.This is another 
+      // "Action", which is just a Bitcoin transaction.
       await createAction({
         // Let the user know what's going on, and why they're getting some 
         // Bitcoins back.
         description: `Complete a TODO task: "${selectedTask.task}"`,
         inputs: { // These are inputs, which unlock Bitcoin tokens.
-          // The input comes from the ToDo token which we're completing
+          // The input comes from the previous ToDo token, which we're now 
+          // completing, redeeming and spending.
           [selectedTask.token.txid]: {
             ...selectedTask.token,
             // The output we want to redeem is specified here, and we also give 

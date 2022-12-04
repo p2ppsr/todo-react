@@ -43,6 +43,10 @@ This ToDo application uses various Bitcoin and web-related tools for different t
 - [**The ToDo Token Bridge**](https://github.com/p2ppsr/todo-bridge) We use the ToDo Bridge to track which tokens are associated with which users, and keep them around so we can get the correct ones back if the user re-loads the page.
 - [**Parapet**](https://github.com/p2ppsr/parapet) We use Parapet to talk to the ToDo Token Bridge, and query it for the tokens associated with the user when the page first loads. Parapet allows queries to be run against data stored in Bridgeport bridges.
 
+## ToDo Protocol Document
+
+You can find the ToDo Protocol in [PROTOCOL.md](PROTOCOL.md)
+
 ## License
 
 The license for the code in this repository is the Open BSV License.
