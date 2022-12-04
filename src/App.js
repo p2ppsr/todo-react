@@ -16,19 +16,10 @@ import { makeStyles } from '@mui/styles'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import GitHubIcon from '@mui/icons-material/GitHub'
-import parapet from 'parapet-js'
 import pushdrop from 'pushdrop'
-import { getPublicKey, decrypt, encrypt, createAction } from '@babbage/sdk'
-
-// Determine which Bridgeport environment this app is running in.
-// In local development mode, the app talks to the local Connecticut proxy.
-// When the app's website URL contains "staging", the app runs on Stgeline.
-// Otherwise, the app will run in Mainline (production) mode, with real Bitcoin.
-const bridgeportResolvers = window.location.host.startsWith('localhost')
-  ? ['http://localhost:3103']
-  : window.location.host.startsWith('staging')
-    ? ['https://staging-bridgeport.babbage.systems']
-    : undefined // In production, Parapet defaults to the correct resolvers
+import {
+  decrypt, encrypt, createAction, getTransactionOutputs
+} from '@babbage/sdk'
 
 // This is the namespace address for the ToDo protocol
 // You can create your own Bitcoin address to use, and customize this protocol
@@ -79,84 +70,6 @@ const App = () => {
   const [selectedTask, setSelectedTask] = useState({})
   const [completeLoading, setCompleteLoading] = useState(false)
   const classes = useStyles()
-
-  // This loads a user's existing ToDo tokens from the app's ToDo token bridge 
-  // whenever the page loads. This populates their ToDo list.
-  // A bridge is just a way to parse and track different Bitcoin tokens.
-  useEffect(() => {
-    (async () => {
-      try {
-        // Finds the current user's ToDo List protocol public key
-        // Users can have different public keys for various different
-        // protocols, which are contexts where their data is stored.
-        // This simple "todo list" protocol always uses a key ID of "1", but 
-        // other protocols can use different key IDs for better privacy.
-        const userPublicKey = await getPublicKey({
-          protocolID: 'todo list',
-          keyID: '1'
-        })
-
-        // Now we'll use a tool called Parapet to fetch this user's current 
-        // ToDo tokens from the ToDo bridge. Tokens are just a way to represent 
-        // something of value, like a task that needs to be completed.
-        const tasksFromBridge = await parapet({
-          resolvers: bridgeportResolvers,
-          bridge: TODO_PROTO_ADDR,
-          request: {
-            type: 'json-query',
-            query: {
-              v: 3,
-              q: {
-                collection: 'todo',
-                find: {
-                  user: userPublicKey
-                }
-              }
-            }
-          }
-        })
-
-        // Now that we have the data, we will decrypt the tasks from the bridge.
-        // The tasks were stored on Bitcoin publicly, but they were encrypted 
-        // so that only this user could read them.
-        const decryptedTasks = await Promise
-          .all(tasksFromBridge.map(async task => {
-            try {
-              // We'll pass in the encrypted value from the token payload, and 
-              // use the same "todo list" protocol and key ID for decrypting.
-              const decryptedTask = await decrypt({
-                ciphertext: Buffer.from(task.task, 'base64'),
-                protocolID: 'todo list',
-                keyID: '1',
-                returnType: 'string'
-              })
-              return {
-                ...task,
-                task: decryptedTask
-              }
-            } catch (e) {
-              // In case there are any errors, we'll handle them gracefully.
-              console.error('Error decrypting task:', e)
-              return {
-                ...task,
-                task: '[error] Unable to decrypt task!'
-              }
-            }
-          }))
-        
-        // We reverse the list, so the newest tasks show up at the top
-        setTasks(decryptedTasks.reverse())
-      } catch (e) {
-        // Any larger errors are also handled. If these steps fail, maybe the 
-        // useer didn't give our app the right permissions, and we couldn't use 
-        // the "todo list" protocol.
-        toast.error(`Failed to load ToDo tasks! Does the app have permission? Error: ${e.message}`)
-        console.error(e)
-      } finally {
-        setTasksLoading(false)
-      }
-    })()
-  }, [])
 
   // Creates a new ToDo token.
   // This function will run when the user clicks "OK" in the creation dialog.
@@ -220,14 +133,15 @@ const App = () => {
           satoshis: Number(createAmount),
           // The output script for this token was created by PushDrop library, 
           // which you can see above.
-          script: bitcoinOutputScript
+          script: bitcoinOutputScript,
+          // We can put the new output into a "basket" which will keep track of 
+          // it, so that we can get it back later.
+          basket: 'todo tokens',
+          // Lastly, we can describe this output for the user
+          description: 'New ToDo list item'
         }],
         // We'll let the user know what this Action
-        description: `Create a TODO task: ${createTask}`,
-        // We'll send this Action to the ToDo bridge, so that a system called 
-        // Bridgeport can keep track of it. That way, the user can always get 
-        // all their ToDo token back when they reload the page.
-        bridges: [TODO_PROTO_ADDR]
+        description: `Create a TODO task: ${createTask}`
       })
 
       // Now, we just let the user know the good news! Their token has been 
@@ -255,12 +169,6 @@ const App = () => {
     } finally {
       setCreateLoading(false)
     }
-  }
-
-  // Opens the completion dialog for the selected task
-  const openCompleteModal = task => () => {
-    setSelectedTask(task)
-    setCompleteOpen(true)
   }
 
   // Redeems the ToDo toeken, marking the selected task as completed.
@@ -307,13 +215,12 @@ const App = () => {
             // the unlocking puzzle ("script") from PushDrop.
             outputsToRedeem: [{
               index: selectedTask.token.outputIndex,
-              unlockingScript
+              unlockingScript,
+              // Spending descriptions tell the user why this input was redeemed
+              spendingDescription: 'Complete a ToDo list item'
             }]
           }
-        },
-        // We let the ToDo token bridge know that this token has been spent, so 
-        // that it can be removed from the list.
-        bridges: [TODO_PROTO_ADDR]
+        }
       })
       // Finally, we let the user know about the good news, and that their  
       // completed ToDo token has been removed from their list! The satoshis 
@@ -333,8 +240,114 @@ const App = () => {
     }
   }
 
+  // This loads a user's existing ToDo tokens from their token basket 
+  // whenever the page loads. This populates their ToDo list.
+  // A basket is just a way to keep track of different kinds of Bitcoin tokens.
+  useEffect(() => {
+    (async () => {
+      try {
+        // We use a function called "getTransactionOutputs" to fetch this 
+        // user's current ToDo tokens from their basket. Tokens are just a way 
+        // to represent something of value, like a task that needs to be 
+        // completed.
+        const tasksFromBasket = await getTransactionOutputs({
+          // The name of the basket where the tokens are kept
+          basket: 'todo tokens',
+          // Only get tokens that are active on the list, not already complete
+          spendable: true,
+          // Also get the envelope needed if we complete (spend) the ToDo token
+          includeEnvelope: true
+        })
+
+        // Now that we have the data (in the tasksFromBasket variable), we will 
+        // decode and decrypt the tasks we got from the basket.When the tasks 
+        // were created, they were encrypted so that only this user could read 
+        // them.Here, the encryption process is reversed.
+        const decryptedTasks = await Promise
+          .all(tasksFromBasket.map(async task => {
+            try {
+              // Each "task" from the array has some useful information that we 
+              // can decode and decrypt, so that the task can be shown on the 
+              // screen.Other fields are useful if we want to spend the token 
+              // later.
+
+              // We can decode the locking script (a.k.a. output script) back 
+              // into the "fields" that we originally gave to PushDrop when the 
+              // token was created.
+              const decodedTask = pushdrop.decode({ script: task.outputScript })
+
+              // As you can tell if you look at the fields we sent into 
+              // PushDrop when the token was originally created, the encrypted 
+              // copy of the task is the second field from the fields array, 
+              // after the TODO_PROTO_ADDR prefix.
+              const encryptedTask = decodedTask.fields[1]
+
+              // We'll pass in the encrypted value from the token, and 
+              // use the "todo list" protocol and key ID for decrypting.
+              // NOTE: The same protocolID and keyID must be used when you 
+              // encrypt and decrypt any data. Decrypting with the wrong 
+              // protocolID or keyID would result in an error.
+              const decryptedTask = await decrypt({
+                ciphertext: Buffer.from(encryptedTask, 'hex'),
+                protocolID: 'todo list',
+                keyID: '1',
+                returnType: 'string'
+              })
+
+              // Now we can return the decrypted version of the task, along 
+              // with some information about the token.
+              return {
+                token: {
+                  // We keep the token's locking script (a.k.a. output script), 
+                  // previous transaction ID (txid), and vout (a.k.a.previous 
+                  // outputIndex), which are useful if the user decides they 
+                  // want to "unlock" / redeem / spend this ToDo token.
+                  ...task.envelope,
+                  lockingScript: task.outputScript,
+                  txid: task.txid,
+                  outputIndex: task.vout
+                },
+                // The "sats" (satoshis) are the amount of Bitcoin in the 
+                // token, for showing on the screen to the user
+                sats: task.amount,
+                // Finally, we include the task that we've just decrypted, for 
+                // showing on- screen in the ToDo list.
+                task: decryptedTask
+              }
+            } catch (e) {
+              // In case there are any errors, we'll handle them gracefully.
+              console.error('Error decrypting task:', e)
+              return {
+                ...task,
+                task: '[error] Unable to decrypt task!'
+              }
+            }
+          }))
+        
+        // We reverse the list, so the newest tasks show up at the top
+        setTasks(decryptedTasks.reverse())
+      } catch (e) {
+        // Any larger errors are also handled. If these steps fail, maybe the 
+        // useer didn't give our app the right permissions, and we couldn't use 
+        // the "todo list" protocol.
+        toast.error(`Failed to load ToDo tasks! Does the app have permission? Error: ${e.message}`)
+        console.error(e)
+      } finally {
+        setTasksLoading(false)
+      }
+    })()
+  }, [])
+
   // The rest of this file just contains some UI code. All the juicy 
   // Bitcoin - related stuff is above.
+
+  // ----------
+
+  // Opens the completion dialog for the selected task
+  const openCompleteModal = task => () => {
+    setSelectedTask(task)
+    setCompleteOpen(true)
+  }
 
   return (
     <>
