@@ -93,13 +93,21 @@ const App = () => {
       setCreateLoading(true)
 
       // We can take the user's input from the text field (their new task), and 
-      // encrypt it with a key that only they have.When we put the encrypted 
+      // encrypt it with a key that only they have. When we put the encrypted 
       // value into a ToDo Bitcoin token, only the same user can get it back 
       // later on, after creation.
       const encryptedTask = await encrypt({
+        // The plaintext for encryption is what the user put into the text field
         plaintext: Uint8Array.from(Buffer.from(createTask)),
+        // The protocolID and keyID are important. When users encrypt things, they can do so in different contexts. The protocolID is the "context" in which a user has encrypted something. When your app uses a new protocol, it can only do so with the permission of the user.
         protocolID: 'todo list',
+        // The keyID can be used to enable multiple keys for different 
+        // operations within the same protocol.For our simple "todo list" 
+        // protocol, let's all just agree that the keyID should be "1".
         keyID: '1'
+        // P.S. We'll need to use the exact same protocolID and keyID later, 
+        // when we want to decrypt the ToDo list items.Otherwise, the 
+        // decryption would fail.
       })
 
       // Here's the part where we create the new Bitcoin token.
