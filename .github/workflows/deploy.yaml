@@ -28,9 +28,11 @@ jobs:
           project_id: ${{ env.GOOGLE_PROJECT_ID }}
           image_name: ${{ env.GCR_IMAGE_NAME }}
           image_tag: ${{ env.CURRENT_BRANCH }}-${{ github.sha }}
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.gcp_credentials }}
       - uses: google-github-actions/deploy-cloudrun@v0
         with:
-          credentials: ${{ secrets.gcp_credentials }}
           service: ${{ env.GCR_IMAGE_NAME }}-${{ env.CURRENT_BRANCH }}
           image: "${{ env.GCR_HOST }}/${{ env.GOOGLE_PROJECT_ID }}/${{ env.GCR_IMAGE_NAME }}:${{ env.CURRENT_BRANCH }}-${{ github.sha }}"
           timeout: 3540
