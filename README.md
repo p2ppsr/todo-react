@@ -6,7 +6,7 @@ A Stageline ("testnet") deployment of the master branch of this repository is at
 
 ## Overview
 
-This TODO list application goes beyond the classic demo traditionally used to teach people the basics of UI libraries. It showcases MetaNet technologies like tokenization, identity, encryption and state management. To learn more, check out the accompanying tutorial series.
+This TODO list application goes beyond the classic demo traditionally used to teach people the basics of UI libraries. It showcases MetaNet technologies like tokenization, identity, encryption and state management. To learn more, [check out the accompanying tutorial series](https://projectbabbage.com/docs/babbage-sdk/building-example-app).
 
 You also need to understand the [TODO Protocol](PROTOCOL.md), which defines the data format for ToDo tokens.
 
