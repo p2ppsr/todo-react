@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@babbage/react-prompt": "^0.2.4",
-    "@babbage/sdk": "^0.4.12",
+    "@babbage/react-prompt": "^0.2.5",
+    "@babbage/sdk": "^0.4.18",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
     "@mui/icons-material": "^5.10.6",
