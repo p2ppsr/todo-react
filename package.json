@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@babbage/react-prompt": "^0.2.7",
-    "@babbage/sdk": "^0.4.22",
+    "@babbage/sdk": "^0.4.23",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
     "@mui/icons-material": "^5.10.6",
