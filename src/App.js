@@ -89,7 +89,7 @@ const App = () => {
         return
       }
       if (Number(createAmount) < 500) {
-        toast.error('The amount must be more than 200 satoshis!')
+        toast.error('The amount must be more than 500 satoshis!')
         return
       }
       // Now, we start a loading bar before the encryption and heavy lifting.
