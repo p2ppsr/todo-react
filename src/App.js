@@ -10,11 +10,10 @@ import 'react-toastify/dist/ReactToastify.css'
 import {
   AppBar, Toolbar, List, ListItem, ListItemText, ListItemIcon, Checkbox, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions, TextField,
-  Button, Fab, LinearProgress, Typography, IconButton
+  Button, Fab, LinearProgress, Typography, IconButton, Grid
 } from '@mui/material'
 import { makeStyles } from '@mui/styles'
 import AddIcon from '@mui/icons-material/Add'
-import DeleteIcon from '@mui/icons-material/Delete'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import pushdrop from 'pushdrop'
 import {
@@ -35,6 +34,10 @@ const useStyles = makeStyles({
     height: '4em'
   },
   add_fab: {
+    position: 'fixed',
+    zIndex: 10
+  },
+  add_more_fab: {
     position: 'fixed',
     right: '1em',
     bottom: '1em',
@@ -339,7 +342,7 @@ const App = () => {
               }
             }
           }))
-        
+
         // We reverse the list, so the newest tasks show up at the top
         setTasks(decryptedTasks.reverse())
       } catch (e) {
@@ -390,11 +393,13 @@ const App = () => {
       <div className={classes.app_bar_placeholder} />
 
       {/* Here's the plus button that hangs out at the bottom-right */}
-      <div className={classes.add_fab}>
-        <Fab color='secondary' onClick={() => setCreateOpen(true)}>
-          <AddIcon />
-        </Fab>
-      </div>
+      {tasks.length >= 1 && (
+        <div className={classes.add_more_fab}>
+          <Fab color='primary' onClick={() => setCreateOpen(true)}>
+            <AddIcon />
+          </Fab>
+        </div>
+      )}
 
       {/* This bit shows a loading bar, or the list of tasks */}
       {tasksLoading
@@ -402,11 +407,20 @@ const App = () => {
         : (
           <List>
             {tasks.length === 0 && (
-              <div className={classes.no_items}>
-                <Typography variant='h4'>No ToDo Items</Typography>
-                <Typography color='textSecondary'>
-                  Use the<AddIcon color='primary' />button below to start a task
-                </Typography>
+              <div>
+                <Grid container direction='column' className={classes.no_items}>
+                  <Grid item align='center'>
+                    <Typography variant='h4'>No ToDo Items</Typography>
+                    <Typography color='textSecondary'>
+                      Use the button below to start a task
+                    </Typography>
+                  </Grid>
+                  <Grid item align='center'>
+                    <Fab color='primary' className={classes.add_fab} onClick={() => setCreateOpen(true)}>
+                      <AddIcon />
+                    </Fab>
+                  </Grid>
+                </Grid>
               </div>
             )}
             {tasks.map((x, i) => (
@@ -422,7 +436,7 @@ const App = () => {
                 />
               </ListItem>
             ))}
-          </List>
+          </List >
         )}
 
       {/* This is the dialog for creating a new task */}
@@ -454,11 +468,11 @@ const App = () => {
           {createLoading
             ? <LinearProgress className={classes.loading_bar} />
             : (
-            <DialogActions>
-              <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
-              <Button type='submit'>OK</Button>
-            </DialogActions>
-          )}
+              <DialogActions>
+                <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+                <Button type='submit'>OK</Button>
+              </DialogActions>
+            )}
         </form>
       </Dialog>
 
@@ -476,11 +490,11 @@ const App = () => {
           {completeLoading
             ? <LinearProgress className={classes.loading_bar} />
             : (
-            <DialogActions>
-              <Button onClick={() => setCompleteOpen(false)}>Cancel</Button>
-              <Button type='submit'>Complete Task</Button>
-            </DialogActions>
-          )}
+              <DialogActions>
+                <Button onClick={() => setCompleteOpen(false)}>Cancel</Button>
+                <Button type='submit'>Complete Task</Button>
+              </DialogActions>
+            )}
         </form>
       </Dialog>
     </>
