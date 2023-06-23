@@ -415,7 +415,7 @@ const App = () => {
                       Use the button below to start a task
                     </Typography>
                   </Grid>
-                  <Grid item align='center'>
+                  <Grid item align='center' sx={{ paddingTop: '2.5em' }}>
                     <Fab color='primary' className={classes.add_fab} onClick={() => setCreateOpen(true)}>
                       <AddIcon />
                     </Fab>
