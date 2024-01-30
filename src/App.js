@@ -18,7 +18,7 @@ import GitHubIcon from '@mui/icons-material/GitHub'
 import pushdrop from 'pushdrop'
 import {
   decrypt, encrypt, createAction, getTransactionOutputs
-} from '@babbage/sdk'
+} from '@babbage/sdk-ts'
 
 // This is the namespace address for the ToDo protocol
 // You can create your own Bitcoin address to use, and customize this protocol
