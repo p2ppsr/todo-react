@@ -156,8 +156,11 @@ const App = () => {
         }],
         // Describe the Actions that your app facilitates, in the present 
         // tense, for the user's future reference.
-        description: `Create a TODO task: ${createTask}`
+        description: `Create a TODO task: ${createTask}`,
+        log: ''
       })
+
+      if (newToDoToken.log) console.log(newToDoToken.log)
 
       // Now, we just let the user know the good news! Their token has been 
       // created, and added to the list.
@@ -221,7 +224,7 @@ const App = () => {
       // Now, we're going to use the unlocking puzle that PushDrop has prepared 
       // for us, so that the user can get their Bitcoins back.This is another 
       // "Action", which is just a Bitcoin transaction.
-      await createAction({
+      const r = await createAction({
         // Let the user know what's going on, and why they're getting some 
         // Bitcoins back.
         description: `Complete a TODO task: "${selectedTask.task}"`,
@@ -239,8 +242,12 @@ const App = () => {
               spendingDescription: 'Complete a ToDo list item'
             }]
           }
-        }
+        },
+        log: ''
       })
+
+      if (r.log) console.log(r.log)
+
       // Finally, we let the user know about the good news, and that their  
       // completed ToDo token has been removed from their list! The satoshis 
       // have now been unlocked, and are back in their posession.
