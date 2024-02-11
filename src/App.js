@@ -17,7 +17,7 @@ import AddIcon from '@mui/icons-material/Add'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import pushdrop from 'pushdrop'
 import {
-  decrypt, encrypt, createAction, getTransactionOutputs
+  decrypt, encrypt, createAction, getTransactionOutputs, stampLogFormat
 } from '@babbage/sdk-ts'
 
 // This is the namespace address for the ToDo protocol
@@ -160,7 +160,7 @@ const App = () => {
         log: ''
       })
 
-      if (newToDoToken.log) console.log(newToDoToken.log)
+      if (newToDoToken.log) console.log(stampLogFormat(newToDoToken.log))
 
       // Now, we just let the user know the good news! Their token has been 
       // created, and added to the list.
@@ -246,7 +246,7 @@ const App = () => {
         log: ''
       })
 
-      if (r.log) console.log(r.log)
+      if (r.log) console.log(stampLogFormat(r.log))
 
       // Finally, we let the user know about the good news, and that their  
       // completed ToDo token has been removed from their list! The satoshis 
