@@ -221,13 +221,17 @@ const App = () => {
         outputAmount: selectedTask.sats
       })
 
+      // Let the user know what's going on, and why they're getting some 
+      // Bitcoins back.
+      let description = `Complete a TODO task: "${selectedTask.task}"`
+      if (description.length > 128)
+        description = description.substring(0, 128)
+
       // Now, we're going to use the unlocking puzle that PushDrop has prepared 
       // for us, so that the user can get their Bitcoins back.This is another 
       // "Action", which is just a Bitcoin transaction.
       const r = await createAction({
-        // Let the user know what's going on, and why they're getting some 
-        // Bitcoins back.
-        description: `Complete a TODO task: "${selectedTask.task}"`,
+        description,
         inputs: { // These are inputs, which unlock Bitcoin tokens.
           // The input comes from the previous ToDo token, which we're now 
           // completing, redeeming and spending.
